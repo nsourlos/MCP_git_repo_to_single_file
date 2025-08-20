@@ -59,34 +59,8 @@ Add this to your VS Code or Cursor MCP settings file:
 {
     "mcpServers": {
         "git-files-server": {
-            "command": "sh",
-            "args": ["-c", "command -v uvx >/dev/null 2>&1 || (curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH=\"$HOME/.local/bin:$PATH\"); uvx --from git+https://github.com/nsourlos/MCP_git_repo_to_single_file mcp-git-files-server"],
-            "env": {}
-        }
-    }
-}
-```
-
-**Alternative Configuration (using uv pip):**
-```json
-{
-    "mcpServers": {
-        "git-files-server": {
-            "command": "sh",
-            "args": ["-c", "command -v uv >/dev/null 2>&1 || (curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH=\"$HOME/.local/bin:$PATH\"); uv pip install git+https://github.com/nsourlos/MCP_git_repo_to_single_file; python -c 'import server; server.main()'"],
-            "env": {}
-        }
-    }
-}
-```
-
-**Fallback Configuration (if uv installation fails):**
-```json
-{
-    "mcpServers": {
-        "git-files-server": {
-            "command": "python",
-            "args": ["-c", "import subprocess; subprocess.run(['pip', 'install', 'git+https://github.com/nsourlos/MCP_git_repo_to_single_file']); import mcp_git_files_server; mcp_git_files_server.main()"],
+            "command": "uvx",
+            "args": ["--from", "git+https://github.com/nsourlos/MCP_git_repo_to_single_file", "mcp-git-files-server"],
             "env": {}
         }
     }

@@ -157,18 +157,41 @@ def clone_repo(repo_url: str) -> str:
 #     except Exception as e:
 #         return {"error": f"Failed to process repository: {str(e)}"} 
 
+# def validate_and_convert_params(**kwargs):
+#     """Validate and convert parameters to handle MCP type issues"""
+#     # Handle extensions parameter
+#     if 'extensions' in kwargs:
+#         if kwargs['extensions'] is None or kwargs['extensions'] == "":
+#             kwargs['extensions'] = []
+#         elif isinstance(kwargs['extensions'], str):
+#             # If a single string is passed, convert to list
+#             kwargs['extensions'] = [kwargs['extensions']]
+    
+#     # Handle ignore_patterns parameter
+#     if 'ignore_patterns' in kwargs:
+#         if kwargs['ignore_patterns'] is None or kwargs['ignore_patterns'] == "":
+#             kwargs['ignore_patterns'] = []
+#         elif isinstance(kwargs['ignore_patterns'], str):
+#             kwargs['ignore_patterns'] = [kwargs['ignore_patterns']]
+    
+#     # Handle output_file parameter
+#     if 'output_file' in kwargs:
+#         if kwargs['output_file'] is None:
+#             kwargs['output_file'] = ""
+    
+#     return kwargs
+
 @mcp.tool()
 def files_to_prompt(
     paths: List[str], 
-    extensions: Optional[List[str]] = None,
+    extensions: List[str] = [],  # Change from Optional[List[str]] = None
     include_hidden: bool = False,
-    ignore_patterns: Optional[List[str]] = None,
+    ignore_patterns: List[str] = [],  # Change from Optional[List[str]] = None
     ignore_files_only: bool = False,
     ignore_gitignore: bool = False,
-    output_format: str = "default",  # "default", "cxml", "markdown"
+    output_format: str = "default",
     include_line_numbers: bool = False,
-    # max_file_size: int = 1000000,  # 1MB limit per file
-    output_file: Optional[str] = None
+    output_file: str = ""  # Change from Optional[str] = None
 ) -> str:
     """
     Concatenate files into a single prompt for use with LLMs.
@@ -176,27 +199,30 @@ def files_to_prompt(
     
     Args:
         paths: List of file/directory paths or git repository URLs to process
-        extensions: Only include files with these extensions (e.g., ["py", "txt"])
+        extensions: Only include files with these extensions (e.g., ["py", "txt"]). Empty list means all files.
         include_hidden: Include hidden files and directories
-        ignore_patterns: Patterns to ignore (supports wildcards)
+        ignore_patterns: Patterns to ignore (supports wildcards). Empty list means no patterns.
         ignore_files_only: Only ignore files, not directories matching patterns
         ignore_gitignore: Ignore .gitignore rules
         output_format: Output format - "default", "cxml", or "markdown"
         include_line_numbers: Include line numbers in output
-        # max_file_size: Maximum file size to process (in bytes)
-        output_file: If provided, save the output to this file path.
+        output_file: If provided, save the output to this file path. Empty string means no file output.
     """
+    # Convert empty lists/strings to None for internal function
+    extensions_param = extensions if extensions else None
+    ignore_patterns_param = ignore_patterns if ignore_patterns else None
+    output_file_param = output_file if output_file else None
+    
     return _files_to_prompt_internal(
         paths=paths,
-        extensions=extensions,
+        extensions=extensions_param,
         include_hidden=include_hidden,
-        ignore_patterns=ignore_patterns,
+        ignore_patterns=ignore_patterns_param,
         ignore_files_only=ignore_files_only,
         ignore_gitignore=ignore_gitignore,
         output_format=output_format,
         include_line_numbers=include_line_numbers,
-        # max_file_size=max_file_size,
-        output_file=output_file
+        output_file=output_file_param
     )
 
 def _files_to_prompt_internal(
@@ -293,12 +319,12 @@ def _files_to_prompt_internal(
 @mcp.tool()
 def git_files_to_prompt(
     repo_url: str,
-    extensions: Optional[List[str]] = None,
+    extensions: List[str] = [],  # Change from Optional[List[str]] = None
     include_hidden: bool = False,
-    ignore_patterns: Optional[List[str]] = None,
+    ignore_patterns: List[str] = [],  # Change from Optional[List[str]] = None
     output_format: str = "markdown",
     include_line_numbers: bool = False,
-    output_file: Optional[str] = None
+    output_file: str = ""  # Change from Optional[str] = None
 ) -> str:
     """
     Clone a git repository and convert its files to a prompt format.
@@ -306,24 +332,29 @@ def git_files_to_prompt(
     
     Args:
         repo_url: The URL of the Git repository
-        extensions: Only include files with these extensions (e.g., ["py", "txt"])
+        extensions: Only include files with these extensions (e.g., ["py", "txt"]). Empty list means all files.
         include_hidden: Include hidden files and directories
-        ignore_patterns: Patterns to ignore (supports wildcards)
+        ignore_patterns: Patterns to ignore (supports wildcards). Empty list means no patterns.
         output_format: Output format - "default", "cxml", or "markdown"
         include_line_numbers: Include line numbers in output
-        output_file: If provided, save the output to this file path.
+        output_file: If provided, save the output to this file path. Empty string means no file output.
         
     Returns:
         A string containing the formatted content of the repository files
     """
+    # Convert empty lists/strings to None for internal function
+    extensions_param = extensions if extensions else None
+    ignore_patterns_param = ignore_patterns if ignore_patterns else None
+    output_file_param = output_file if output_file else None
+    
     return _files_to_prompt_internal(
         paths=[repo_url],
-        extensions=extensions,
+        extensions=extensions_param,
         include_hidden=include_hidden,
-        ignore_patterns=ignore_patterns,
+        ignore_patterns=ignore_patterns_param,
         output_format=output_format,
         include_line_numbers=include_line_numbers,
-        output_file=output_file
+        output_file=output_file_param
     )
 
 # def main():
