@@ -8,7 +8,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 setup(
     name="mcp-git-files-server",
     version="0.1.0",
-    author="Your Name",
+    author="nsourlos",
     author_email="your.email@example.com",
     description="A Model Context Protocol server for processing git repositories and files (optimized for uv)",
     long_description=long_description,
@@ -20,9 +20,6 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",

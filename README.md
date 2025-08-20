@@ -1,19 +1,19 @@
 # MCP Git Files Server
 
-A Model Context Protocol (MCP) server that combines git repository analysis with files-to-prompt functionality. This server allows you to:
+A Model Context Protocol (MCP) server that clones a git repository and uses files-to-prompt to convert it to a single LLM file. This server allows you to:
 
 - Analyze git repository directory structures
-- Read specific files from git repositories  
+- Read all files  
 - Convert git repositories to prompt format using files-to-prompt
-- Process both local paths and remote git repositories
+<!-- - Process both local paths and remote git repositories -->
 
 ## Features
 
 - **Git Repository Analysis**: Clone and analyze the structure of any public git repository
-- **File Reading**: Read specific files from git repositories
+- **File Reading**: Read files from git repositories
 - **Files to Prompt**: Convert files and directories to LLM-friendly prompt format
 - **Smart Caching**: Reuses cloned repositories to improve performance
-- **Multiple Formats**: Support for default, markdown, and CXML output formats
+- **Multiple Formats**: Support for Markdown, and CXML output formats
 
 ## Prerequisites
 
@@ -83,16 +83,13 @@ VS Code doesn't have native MCP support, but you can use the server through VS C
 
 ```
 
-2. open the MCP SERVERS - INSTALLED section in the Extensions view (⇧⌘X). Run the MCP: List Servers command from the Command Palette to view the list of installed MCP servers
+2. Open the [MCP SERVERS - INSTALLED](https://code.visualstudio.com/assets/docs/copilot/chat/mcp-servers/extensions-view-mcp-servers.png) section in the Extensions view. Run the ```MCP: List Servers``` command from the Command Palette (```Command+Shift+P```) to view the list of installed MCP servers
 
 #### Option 2: Terminal Integration
 
 Simply run commands in VS Code's integrated terminal:
 
 ```bash
-# Test the server installation
-uvx --from git+https://github.com/nsourlos/MCP_git_repo_to_single_file mcp-git-files-server --help
-
 # Run the server (for testing)
 uvx --from git+https://github.com/nsourlos/MCP_git_repo_to_single_file mcp-git-files-server
 
@@ -100,17 +97,9 @@ uvx --from git+https://github.com/nsourlos/MCP_git_repo_to_single_file mcp-git-f
 python test_client.py
 ```
 
-## Usage Examples
-
-### Using in Cursor
-Once configured, the MCP tools will be available directly in Cursor's AI interface. You can use natural language to interact with the tools.
-
-### Using in VS Code
-Run the tasks or terminal commands, then use the server's functionality through the test client or by integrating it into your workflow.
-
 ## Tools
 
-### git_directory_structure
+<!-- ### git_directory_structure
 Get the directory structure of a git repository in tree format.
 
 **Parameters:**
@@ -131,7 +120,7 @@ Read specific files from a git repository.
 **Example:**
 ```python
 git_read_files("https://github.com/user/repo", ["README.md", "src/main.py"])
-```
+``` -->
 
 ### files_to_prompt
 Convert files and directories to LLM prompt format. Supports both local paths and git URLs.
@@ -175,24 +164,12 @@ git_files_to_prompt(
 )
 ```
 
-## Testing
-
-You can test the installation using the provided test client:
-
-```bash
-# Make sure uv is available
-uv --version || curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Run the test
-python test_client.py
-```
-
-## Benefits
+## Key Improvements
 
 This implementation provides several key advantages:
 
-1. **Cross-Editor Compatibility**: Works with both Cursor (native MCP) and VS Code (via tasks/terminal)
-2. **No Local Setup**: Users don't need to install dependencies manually
+1. **Cross-Editor Compatibility**: Works with both Cursor (native MCP) and VS Code
+2. **No Local Setup**: Users don't need to install dependencies manually. Dependencies declared in `pyproject.toml` and installed automatically
 3. **Version Control**: Server code is version controlled and can be updated via git
 4. **Consistent Environment**: Dependencies are managed consistently with uv
 5. **Better Performance**: Smart caching reduces repeated git operations, uv provides faster installs
@@ -200,19 +177,7 @@ This implementation provides several key advantages:
 7. **Easy Distribution**: Can be shared via GitHub URL
 8. **Reliable Installation**: uv provides better dependency resolution than pip
 
-## Key Improvements
 
-This server combines the best of git repository analysis with files-to-prompt functionality:
+<!-- ## License
 
-- **Combined Functionality**: Merged git analysis and files-to-prompt capabilities
-- **Cross-Editor Support**: Native MCP support in Cursor, task-based integration in VS Code
-- **No Local Dependencies**: Dependencies declared in `pyproject.toml` and installed automatically
-- **Git-based Deployment**: Can be installed directly from GitHub
-- **Smart Caching**: Reuses cloned repositories for better performance
-- **Multiple Tools**: Provides both specific git tools and general files-to-prompt functionality
-- **Fast Installation**: Uses `uv` for faster package installation and dependency resolution
-- **Better Error Handling**: Robust configuration with fallback options
-
-## License
-
-MIT License
+MIT License -->

@@ -11,7 +11,7 @@ async def test_git_files_server():
     
     # Connect to the new server
     client = Client("server.py")
-    repo_url = "https://github.com/nsourlos/OCR_with_LLMs"#"https://github.com/adhikasp/mcp-git-ingest"
+    repo_url = "https://github.com/adhikasp/mcp-git-ingest"
     
     async with client:
         print("🔍 Testing Git Files Server...")
