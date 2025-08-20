@@ -30,7 +30,7 @@ powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 
 ## Installation
 
-### From Git (Recommended for VS Code/Cursor)
+### From Git (Recommended)
 
 ```bash
 uv pip install git+https://github.com/nsourlos/MCP_git_repo_to_single_file
@@ -46,15 +46,10 @@ uv pip install -e .
 
 ## Configuration
 
-### VS Code/Cursor Configuration
+### Cursor Configuration
 
-Add this to your VS Code or Cursor MCP settings file:
+Cursor has native MCP support. Add this to your Cursor MCP settings file at `~/.cursor/mcp.json`:
 
-**Settings File Locations:**
-- VS Code: `~/.vscode/mcp.json` or similar
-- Cursor: `~/.cursor/mcp.json`
-
-**Recommended Configuration (using uvx):**
 ```json
 {
     "mcpServers": {
@@ -66,6 +61,52 @@ Add this to your VS Code or Cursor MCP settings file:
     }
 }
 ```
+
+### VS Code Configuration
+
+VS Code doesn't have native MCP support, but you can use the server through VS Code Tasks for easy access:
+
+#### Option 1: VS Code Tasks (Recommended)
+
+1. Create a `.vscode/mcp.json` file in your project root:
+```json
+
+{
+    "servers": {
+        "git-files-server": {
+            "command": "uvx",
+            "args": ["--from", "git+https://github.com/nsourlos/MCP_git_repo_to_single_file", "mcp-git-files-server"],
+            "env": {}
+        }
+    }
+}
+
+```
+
+2. open the MCP SERVERS - INSTALLED section in the Extensions view (⇧⌘X). Run the MCP: List Servers command from the Command Palette to view the list of installed MCP servers
+
+#### Option 2: Terminal Integration
+
+Simply run commands in VS Code's integrated terminal:
+
+```bash
+# Test the server installation
+uvx --from git+https://github.com/nsourlos/MCP_git_repo_to_single_file mcp-git-files-server --help
+
+# Run the server (for testing)
+uvx --from git+https://github.com/nsourlos/MCP_git_repo_to_single_file mcp-git-files-server
+
+# Test with the provided client
+python test_client.py
+```
+
+## Usage Examples
+
+### Using in Cursor
+Once configured, the MCP tools will be available directly in Cursor's AI interface. You can use natural language to interact with the tools.
+
+### Using in VS Code
+Run the tasks or terminal commands, then use the server's functionality through the test client or by integrating it into your workflow.
 
 ## Tools
 
@@ -150,19 +191,21 @@ python test_client.py
 
 This implementation provides several key advantages:
 
-1. **No Local Setup**: Users don't need to install dependencies manually
-2. **Version Control**: Server code is version controlled and can be updated via git
-3. **Consistent Environment**: Dependencies are managed consistently with uv
-4. **Better Performance**: Smart caching reduces repeated git operations, uv provides faster installs
-5. **Multiple Tools**: Provides both specific and general-purpose tools
-6. **Easy Distribution**: Can be shared via GitHub URL
-7. **Reliable Installation**: uv provides better dependency resolution than pip
+1. **Cross-Editor Compatibility**: Works with both Cursor (native MCP) and VS Code (via tasks/terminal)
+2. **No Local Setup**: Users don't need to install dependencies manually
+3. **Version Control**: Server code is version controlled and can be updated via git
+4. **Consistent Environment**: Dependencies are managed consistently with uv
+5. **Better Performance**: Smart caching reduces repeated git operations, uv provides faster installs
+6. **Multiple Tools**: Provides both specific and general-purpose tools
+7. **Easy Distribution**: Can be shared via GitHub URL
+8. **Reliable Installation**: uv provides better dependency resolution than pip
 
 ## Key Improvements
 
 This server combines the best of git repository analysis with files-to-prompt functionality:
 
 - **Combined Functionality**: Merged git analysis and files-to-prompt capabilities
+- **Cross-Editor Support**: Native MCP support in Cursor, task-based integration in VS Code
 - **No Local Dependencies**: Dependencies declared in `pyproject.toml` and installed automatically
 - **Git-based Deployment**: Can be installed directly from GitHub
 - **Smart Caching**: Reuses cloned repositories for better performance
