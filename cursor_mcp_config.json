@@ -1,0 +1,9 @@
+{
+    "mcpServers": {
+        "git-files-server": {
+            "command": "sh",
+            "args": ["-c", "command -v uvx >/dev/null 2>&1 || (curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH=\"$HOME/.local/bin:$PATH\"); uvx --from git+https://github.com/nsourlos/MCP_git_repo_to_single_file mcp-git-files-server"],
+            "env": {}
+        }
+    }
+}
