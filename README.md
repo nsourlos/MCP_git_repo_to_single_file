@@ -46,6 +46,9 @@ uv pip install -e .
 
 ## Configuration
 
+> **Note for Windows Users**: This MCP server may have compatibility issues on Windows systems. It has been primarily tested on macOS. If you encounter issues on Windows, consider using WSL (Windows Subsystem for Linux) for better compatibility.
+
+
 ### Cursor Configuration
 
 Cursor has native MCP support. Add this to your Cursor MCP settings file at `~/.cursor/mcp.json`:
