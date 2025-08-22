@@ -1,0 +1,21 @@
+// Example for remote installation
+{
+    "mcpServers": {
+        "git-files-server": {
+            "command": "uvx",
+            "args": ["--from", "git+https://github.com/nsourlos/MCP_git_repo_to_single_file", "mcp-git-files-server"],
+            "env": {}
+        }
+    }
+}
+
+// Example for local installation on Windows
+{
+    "mcpServers": {
+        "git-files-server": {
+            "command": "uv",
+            "args": ["--directory", "C:\\Users\\<user>\\Desktop\\MCP_git_repo_to_single_file", "run", "server.py"],
+            "env": {}
+            }
+        }
+}

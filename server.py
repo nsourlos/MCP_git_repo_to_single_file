@@ -7,13 +7,14 @@ from fastmcp import FastMCP
 import os
 import subprocess
 import sys
-from typing import Optional, List, Dict
-import tempfile
+from typing import Optional, List
 import shutil
 import re
 import hashlib
 import logging
-from pathlib import Path
+import asyncio
+import anyio
+import git
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, stream=sys.stderr, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -39,159 +40,54 @@ def is_git_url(path: str) -> bool:
     ]
     return any(re.match(pattern, path) for pattern in git_patterns)
 
-def clone_repo(repo_url: str) -> str:
-    """Clone a repository and return the path. If repository is already cloned in temp directory, reuse it."""
+async def clone_repo(repo_url: str) -> str:
+    """Clone a repository and return the path. If repository is already cloned in current directory, reuse it."""
     # Create a deterministic directory name based on repo URL
     repo_hash = hashlib.sha256(repo_url.encode()).hexdigest()[:12]
-    temp_dir = os.path.join(tempfile.gettempdir(), f"git_files_server_{repo_hash}")
+    current_dir = os.getcwd()
+    repo_dir = os.path.join(current_dir, f"git_files_server_{repo_hash}")
     
     # If directory exists and is a valid git repo, return it
-    if os.path.exists(temp_dir):
+    if os.path.exists(repo_dir):
         try:
             # Simple check if it's a git repository
-            git_dir = os.path.join(temp_dir, '.git')
+            git_dir = os.path.join(repo_dir, '.git')
             if os.path.exists(git_dir):
-                logging.info(f"Reusing existing repository at {temp_dir}")
-                return temp_dir
+                logging.info(f"Reusing existing repository at {repo_dir}")
+                return repo_dir
         except Exception:
             # If there's any error with existing repo, clean it up
-            shutil.rmtree(temp_dir, ignore_errors=True)
+            shutil.rmtree(repo_dir, ignore_errors=True)
     
     # Create directory and clone repository
-    os.makedirs(temp_dir, exist_ok=True)
+    os.makedirs(repo_dir, exist_ok=True)
     try:
-        logging.info(f"Cloning {repo_url} to {temp_dir}...")
-        result = subprocess.run(
-            ["git", "clone", repo_url, temp_dir],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        logging.info(f"Successfully cloned to {temp_dir}")
-        return temp_dir
-    except subprocess.CalledProcessError as e:
-        # Clean up on error
-        shutil.rmtree(temp_dir, ignore_errors=True)
-        raise Exception(f"Failed to clone repository {repo_url}: {e.stderr}")
+        logging.info(f"Cloning {repo_url} to {repo_dir}...")
+
+        def _clone_repo():
+            repo = git.Repo.clone_from(repo_url, repo_dir)
+            return repo
+        
+        result = await anyio.to_thread.run_sync(_clone_repo)
+        logging.info(f"Cloned repository: {result}")
+        return repo_dir
+
     except Exception as e:
         # Clean up on error
-        shutil.rmtree(temp_dir, ignore_errors=True)
+        shutil.rmtree(repo_dir, ignore_errors=True)
         raise Exception(f"Error cloning repository: {str(e)}")
 
-# def get_directory_tree(path: str, prefix: str = "") -> str:
-#     """Generate a tree-like directory structure string"""
-#     output = ""
-#     try:
-#         entries = sorted([e for e in os.listdir(path) if not e.startswith('.git')])
-#     except PermissionError:
-#         return f"{prefix}[Permission Denied]\n"
-    
-#     for i, entry in enumerate(entries):
-#         is_last = i == len(entries) - 1
-#         current_prefix = "└── " if is_last else "├── "
-#         next_prefix = "    " if is_last else "│   "
-        
-#         entry_path = os.path.join(path, entry)
-#         output += prefix + current_prefix + entry + "\n"
-        
-#         if os.path.isdir(entry_path):
-#             output += get_directory_tree(entry_path, prefix + next_prefix)
-            
-#     return output
-
-# @mcp.tool()
-# def git_directory_structure(repo_url: str) -> str:
-#     """
-#     Clone a Git repository and return its directory structure in a tree format.
-    
-#     Args:
-#         repo_url: The URL of the Git repository
-        
-#     Returns:
-#         A string representation of the repository's directory structure
-#     """
-#     try:
-#         # Clone the repository
-#         repo_path = clone_repo(repo_url)
-        
-#         # Generate the directory tree
-#         tree = get_directory_tree(repo_path)
-#         return tree
-            
-#     except Exception as e:
-#         return f"Error: {str(e)}"
-
-# @mcp.tool()
-# def git_read_files(repo_url: str, file_paths: List[str]) -> Dict[str, str]:
-#     """
-#     Read the contents of specified files in a given git repository.
-    
-#     Args:
-#         repo_url: The URL of the Git repository
-#         file_paths: List of file paths to read (relative to repository root)
-        
-#     Returns:
-#         A dictionary mapping file paths to their contents
-#     """
-#     try:
-#         # Clone the repository
-#         repo_path = clone_repo(repo_url)
-#         results = {}
-        
-#         for file_path in file_paths:
-#             full_path = os.path.join(repo_path, file_path)
-            
-#             # Check if file exists
-#             if not os.path.isfile(full_path):
-#                 results[file_path] = f"Error: File not found"
-#                 continue
-                
-#             try:
-#                 with open(full_path, 'r', encoding='utf-8') as f:
-#                     results[file_path] = f.read()
-#             except Exception as e:
-#                 results[file_path] = f"Error reading file: {str(e)}"
-        
-#         return results
-            
-#     except Exception as e:
-#         return {"error": f"Failed to process repository: {str(e)}"} 
-
-# def validate_and_convert_params(**kwargs):
-#     """Validate and convert parameters to handle MCP type issues"""
-#     # Handle extensions parameter
-#     if 'extensions' in kwargs:
-#         if kwargs['extensions'] is None or kwargs['extensions'] == "":
-#             kwargs['extensions'] = []
-#         elif isinstance(kwargs['extensions'], str):
-#             # If a single string is passed, convert to list
-#             kwargs['extensions'] = [kwargs['extensions']]
-    
-#     # Handle ignore_patterns parameter
-#     if 'ignore_patterns' in kwargs:
-#         if kwargs['ignore_patterns'] is None or kwargs['ignore_patterns'] == "":
-#             kwargs['ignore_patterns'] = []
-#         elif isinstance(kwargs['ignore_patterns'], str):
-#             kwargs['ignore_patterns'] = [kwargs['ignore_patterns']]
-    
-#     # Handle output_file parameter
-#     if 'output_file' in kwargs:
-#         if kwargs['output_file'] is None:
-#             kwargs['output_file'] = ""
-    
-#     return kwargs
-
 @mcp.tool()
-def files_to_prompt(
+async def files_to_prompt(
     paths: List[str], 
-    extensions: List[str] = [],  # Change from Optional[List[str]] = None
+    extensions: List[str] = [],  
     include_hidden: bool = False,
-    ignore_patterns: List[str] = [],  # Change from Optional[List[str]] = None
+    ignore_patterns: List[str] = [], 
     ignore_files_only: bool = False,
     ignore_gitignore: bool = False,
     output_format: str = "default",
     include_line_numbers: bool = False,
-    output_file: str = ""  # Change from Optional[str] = None
+    output_file: str = "" 
 ) -> str:
     """
     Concatenate files into a single prompt for use with LLMs.
@@ -208,12 +104,13 @@ def files_to_prompt(
         include_line_numbers: Include line numbers in output
         output_file: If provided, save the output to this file path. Empty string means no file output.
     """
+    logging.info(f"files_to_prompt paths: {paths}")
     # Convert empty lists/strings to None for internal function
     extensions_param = extensions if extensions else None
     ignore_patterns_param = ignore_patterns if ignore_patterns else None
     output_file_param = output_file if output_file else None
     
-    return _files_to_prompt_internal(
+    return await _files_to_prompt_internal(
         paths=paths,
         extensions=extensions_param,
         include_hidden=include_hidden,
@@ -225,7 +122,7 @@ def files_to_prompt(
         output_file=output_file_param
     )
 
-def _files_to_prompt_internal(
+async def _files_to_prompt_internal(
     paths: List[str], 
     extensions: Optional[List[str]] = None,
     include_hidden: bool = False,
@@ -234,10 +131,12 @@ def _files_to_prompt_internal(
     ignore_gitignore: bool = False,
     output_format: str = "default",
     include_line_numbers: bool = False,
-    # max_file_size: int = 1000000,
     output_file: Optional[str] = None
 ) -> str:
+    
     """Internal function for files_to_prompt logic"""
+
+    logging.info(f"files_to_prompt_internal paths: {paths}")
     processed_paths = []
     temp_dirs = []
     
@@ -246,7 +145,7 @@ def _files_to_prompt_internal(
         for path in paths:
             logging.info(f"Processing path: {path}")
             if is_git_url(path):
-                cloned_path = clone_repo(path)
+                cloned_path = await clone_repo(path)
                 processed_paths.append(cloned_path)
                 temp_dirs.append(cloned_path)
             else:
@@ -287,106 +186,60 @@ def _files_to_prompt_internal(
         
         # Execute the command
         logging.info(f"Executing command: {' '.join(cmd)}")
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            stdin=subprocess.DEVNULL,
-            timeout=300
-        )
-        
+
+        def _run_f2p():
+            return subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=False,
+                stdin=subprocess.DEVNULL
+            )
+
+        result = await anyio.to_thread.run_sync(_run_f2p)
+
         if result.returncode != 0:
             logging.error(f"Command failed with return code {result.returncode}")
             logging.error(f"stderr: {result.stderr}")
-            return f"Error: {result.stderr}"
+            raise Exception(f"Failed to run files-to-prompt: {result.stderr}")
         
         if output_file:
-            # The tool handles file writing. If it printed anything to stdout, log it.
-            if result.stdout:
-                logging.info(f"Tool output: {result.stdout}")
-            logging.info(f"Output successfully saved to {output_file}")
-            return result.stdout
+            logging.error(f"No output was written to {output_file}")
+            return result.stdout #f"Error: No output was written to {output_file}"
         else:
             return result.stdout
-        
-    except subprocess.TimeoutExpired:
-        logging.error("Command timed out after 5 minutes.")
-        return "Error: The 'files-to-prompt' command timed out."
+       
     except Exception as e:
         logging.error(f"Error running files-to-prompt: {str(e)}")
         return f"Error running files-to-prompt: {str(e)}"
 
-@mcp.tool()
-def git_files_to_prompt(
-    repo_url: str,
-    extensions: List[str] = [],  # Change from Optional[List[str]] = None
-    include_hidden: bool = False,
-    ignore_patterns: List[str] = [],  # Change from Optional[List[str]] = None
-    output_format: str = "markdown",
-    include_line_numbers: bool = False,
-    output_file: str = ""  # Change from Optional[str] = None
-) -> str:
-    """
-    Clone a git repository and convert its files to a prompt format.
-    This is a convenience function that combines git cloning with files-to-prompt.
-    
-    Args:
-        repo_url: The URL of the Git repository
-        extensions: Only include files with these extensions (e.g., ["py", "txt"]). Empty list means all files.
-        include_hidden: Include hidden files and directories
-        ignore_patterns: Patterns to ignore (supports wildcards). Empty list means no patterns.
-        output_format: Output format - "default", "cxml", or "markdown"
-        include_line_numbers: Include line numbers in output
-        output_file: If provided, save the output to this file path. Empty string means no file output.
-        
-    Returns:
-        A string containing the formatted content of the repository files
-    """
-    # Convert empty lists/strings to None for internal function
-    extensions_param = extensions if extensions else None
-    ignore_patterns_param = ignore_patterns if ignore_patterns else None
-    output_file_param = output_file if output_file else None
-    
-    return _files_to_prompt_internal(
-        paths=[repo_url],
-        extensions=extensions_param,
-        include_hidden=include_hidden,
-        ignore_patterns=ignore_patterns_param,
-        output_format=output_format,
-        include_line_numbers=include_line_numbers,
-        output_file=output_file_param
-    )
-
-# def main():
-    # """Entry point for the MCP server"""
-    # mcp.run()
-
 def main():
     """Entry point for the MCP server"""
     import sys
+
+    args = sys.argv[1:]
     
     # Check if running as MCP server (no arguments) or with git repo argument
-    if len(sys.argv) > 1:
-        # Running with git repo argument - process the repo
-        repo_url = sys.argv[1]
+    if not args or args[0].startswith("-"):
+        logging.info("Running as MCP server")
+        mcp.run()
+        return
+    
+    repo_url = args[0]
+    async def process_repo():
         logging.info(f"Processing repository: {repo_url}")
-        
-        # You can add logic here to process the repo directly
-        # For example, run files_to_prompt on the repo
         try:
-            result = _files_to_prompt_internal(
+            result = await _files_to_prompt_internal(
                 paths=[repo_url],
-                output_format="txt"
+                output_format="markdown",
+                # output_file="mcp_test_output.txt"
             )
-            # print(result)
             logging.info(f"Output length: {len(str(result))} characters")
         except Exception as e:
             print(f"Error processing repository: {e}")
             sys.exit(1)
-    else:
-        # Running as MCP server
-        mcp.run()
-
+    
+    asyncio.run(process_repo())
 
 if __name__ == "__main__":
     main()
