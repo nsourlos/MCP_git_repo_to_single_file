@@ -1,0 +1,9 @@
+{
+    "mcpServers": {
+        "git-files-server": {
+            "command": "uvx",
+            "args": ["--from", "git+https://github.com/nsourlos/MCP_git_repo_to_single_file", "mcp-git-files-server"],
+            "env": {}
+        }
+    }
+}
