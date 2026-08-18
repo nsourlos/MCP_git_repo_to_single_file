@@ -64,6 +64,12 @@ Cursor has native MCP support. Add this to your Cursor MCP settings file at `~/.
 }
 ```
 
+### Claude Code
+
+```bash
+claude mcp add --scope user git-files-server -- uvx --from git+https://github.com/nsourlos/MCP_git_repo_to_single_file mcp-git-files-server
+```
+
 ### VS Code Configuration
 
 VS Code doesn't have native MCP support, but you can use the server through VS Code Tasks for easy access:
